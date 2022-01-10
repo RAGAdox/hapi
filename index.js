@@ -1,8 +1,11 @@
+require("dotenv").config();
 const Hapi = require(`@hapi/hapi`);
 
 const routes = require("./routes/index");
 //Global Redis Client for caching
-const { redisClient } = require("./redis/index");
+const { redisClient } = require("./redis");
+
+const { sequelize } = require("./database");
 
 const init = async () => {
   redisClient.connect();
@@ -26,6 +29,7 @@ const init = async () => {
 
   redisClient.on("connect", async () => {
     console.log("Redis Connected");
+    await sequelize.sync({ force: false });
     await server.start();
     console.log(`Server Started on ${server.info.uri}`);
   });

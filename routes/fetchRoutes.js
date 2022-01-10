@@ -1,6 +1,3 @@
-const { redisSetData, redisGetData } = require("../redis/index");
-
-const { fetchDataByKeyDb, fetchDataDb } = require("../database/fetchDataDB");
 //Validation Middleware
 const { keyValidation } = require("../middleware/util");
 //Fetch Controllers

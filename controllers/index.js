@@ -1,14 +1,7 @@
 //Redis Methods to save and update cache
 const { redisGetData, redisSetData, redisDelData } = require("../redis");
-//Database Methods to fetch data from database if data not present in cache
-const { fetchDataByKeyDb, fetchDataDb } = require("../database/fetchDataDB");
-//Database Methods to save data into database
-const {
-  insertDataDb,
-  updateDataByKeyDb,
-  deleteDataByKeyDb,
-} = require("../database/saveDataDB");
-
+//SEQUELIZE Data Model providing Database functionality as Functions
+const Data = require("../models/dataModel");
 //Controller Functions to perform CRUD Operations
 
 const getDataByKey = async (request, h) => {
@@ -18,10 +11,14 @@ const getDataByKey = async (request, h) => {
     return h.response({ key: key, value: data });
   } else {
     try {
-      const result = await fetchDataByKeyDb(key);
-      if (result.rowCount != 0) {
-        await redisSetData(result.rows[0].key, result.rows[0].value);
-        return h.response(result.rows[0]);
+      const result = await Data.findAll({
+        where: { key: key },
+        attributes: ["key", "value"],
+      });
+      
+      if (result && result.length !== 0) {
+        await redisSetData(result[0].key, result[0].value);
+        return h.response(result[0]);
       } else
         return h
           .response({
@@ -43,8 +40,8 @@ const getDataByKey = async (request, h) => {
 
 const getData = async (request, h) => {
   try {
-    const result = await fetchDataDb();
-    if (result.rowCount != 0) return h.response(result.rows);
+    const result = await Data.findAll({ attributes: ["key", "value"] });
+    if (result && result.length != 0) return h.response(result);
     else
       return h
         .response({ success: false, message: `Table is empty` })
@@ -63,7 +60,7 @@ const getData = async (request, h) => {
 const saveData = async (request, h) => {
   const { key, value } = request.pre.data;
   try {
-    await insertDataDb(key, value);
+    await Data.create({ key: key, value: value });
     await redisSetData(key, value);
     return h.response({
       success: true,
@@ -83,8 +80,9 @@ const saveData = async (request, h) => {
 const updateDataByKey = async (request, h) => {
   const { key, value } = request.pre.data;
   try {
-    const result = await updateDataByKeyDb(key, value);
-    if (result.rowCount != 0) {
+    const result = await Data.update({ value: value }, { where: { key: key } });
+
+    if (result != 0) {
       await redisSetData(key, value);
       return h.response({
         success: true,
@@ -111,8 +109,8 @@ const updateDataByKey = async (request, h) => {
 const deleteDataByKey = async (request, h) => {
   const { key } = request.pre.data;
   try {
-    const result = await deleteDataByKeyDb(key);
-    if (result.rowCount != 0) {
+    const result = await Data.destroy({ where: { key: key } });
+    if (result != 0) {
       await redisDelData(key);
       return h.response({
         success: true,
