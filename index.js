@@ -1,7 +1,7 @@
 const Hapi = require(`@hapi/hapi`);
 
 const routes = require("./routes/index");
-
+//Global Redis Client for caching
 const { redisClient } = require("./redis/index");
 
 const init = async () => {
