@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev":"NODE_ENV=dev nodemon index.js",
+    "test": "lab -t 100"
   },
   "author": "",
   "license": "ISC",
@@ -16,5 +17,10 @@
     "pg-hstore": "^2.3.4",
     "redis": "^4.0.1",
     "sequelize": "^6.12.5"
+  },
+  "devDependencies": {
+    "@hapi/code": "^8.0.5",
+    "@hapi/lab": "^24.5.0",
+    "supertest": "^6.2.0"
   }
 }

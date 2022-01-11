@@ -1,19 +1,18 @@
-require("dotenv").config();
+require("dotenv").config({
+  path: `./.env${process.env.NODE_ENV ? "." + process.env.NODE_ENV : ""}`,
+});
 const Hapi = require(`@hapi/hapi`);
 
-const routes = require("./routes/index");
+const routes = require("./routes");
 //Global Redis Client for caching
 const { redisClient } = require("./redis");
-
 const { sequelize } = require("./database");
-
+const server = Hapi.server({
+  port: process.env.PORT || 3000,
+  host: process.env.HOST || "localhost",
+});
 const init = async () => {
   redisClient.connect();
-
-  const server = Hapi.server({
-    port: 3000,
-    host: "localhost",
-  });
 
   server.route(
     [
@@ -21,7 +20,9 @@ const init = async () => {
         method: "*",
         path: "/{any*}",
         handler: (request, h) => {
-          return "404 Error! Route not found";
+          return h
+            .response({ message: `404 Error! Route not found` })
+            .code(404);
         },
       },
     ].concat(routes)
@@ -29,7 +30,8 @@ const init = async () => {
 
   redisClient.on("connect", async () => {
     console.log("Redis Connected");
-    await sequelize.sync({ force: false });
+    await sequelize.sync({ force: process.env.FORCE_SYNC === 1 });
+    console.log(`Database Syncronized`);
     await server.start();
     console.log(`Server Started on ${server.info.uri}`);
   });
@@ -45,3 +47,4 @@ process.on("unhandledRejection", (err) => {
 });
 
 init();
+module.exports = server;
